@@ -1,0 +1,5 @@
+graft collective
+graft docs
+include *.rst
+include *.cfg
+global-exclude *.pyc

@@ -1,0 +1,17 @@
+<configure
+    xmlns:five="http://namespaces.zope.org/five" 
+    xmlns="http://namespaces.zope.org/zope">
+
+  <five:registerPackage package="." initialize=".initialize" />
+
+  <subscriber
+    for="collective.rediscache.cachemanager.RedisCacheManager
+         OFS.interfaces.IObjectClonedEvent"
+    handler="collective.rediscache.subscribers.cloned" />
+
+  <subscriber
+    for="collective.rediscache.cachemanager.RedisCacheManager
+         zope.lifecycleevent.ObjectRemovedEvent"
+    handler="collective.rediscache.subscribers.removed" />
+
+</configure>
