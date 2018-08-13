@@ -37,4 +37,9 @@ setup(name='collective.rediscache',
       ],
       include_package_data=True,
       zip_safe=False,
+      entry_points="""
+          # -*- Entry points: -*-
+          [z3c.autoinclude.plugin]
+          target = plone
+      """
       )
