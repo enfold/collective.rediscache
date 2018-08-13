@@ -7,7 +7,7 @@ setup(name='collective.rediscache',
       description="Redis cache manager for Zope 2.",
       author='Plone Foundation and Contributors',
       author_email='zope-dev@zope.org',
-      long_description=(open('README.rst').read() + '\n' +
+      long_description=(open('README.md').read() + '\n' +
                         open('CHANGES.rst').read()),
       packages=find_packages(exclude=['ez_setup']),
       namespace_packages=['collective'],
