@@ -1,7 +1,9 @@
+from logging import getLogger
 import time
 
 from dogpile.cache import make_region
 from dogpile.cache.api import NO_VALUE
+from dogpile.cache.proxy import ProxyBackend
 
 from AccessControl.class_init import InitializeClass
 from AccessControl.Permissions import view_management_screens
@@ -13,10 +15,28 @@ from OFS.Cache import CacheManager
 from OFS.SimpleItem import SimpleItem
 
 
+logger = getLogger('collective.rediscache')
+
 caches = {}
 DEFAULT_URL = 'redis://127.0.0.1:6379'
 KEY_PREFIX = 'collective.rediscache:'
 
+
+class LoggingProxy(ProxyBackend):
+
+    def get(self, key):
+        value = self.proxied.get(key)
+        if 'ZCache:' not in key:
+            result = "HIT"
+            if value is NO_VALUE:
+                result = "MISS"
+            logger.info("Cache {} for key {}".format(result, key))
+        return value
+
+    def set(self, key, value):
+        if 'ZCache:' not in key:
+            logger.info("Setting value for key {}".format(key))
+        return self.proxied.set(key, value)
 
 redis_cache = make_region(
     name='collective.rediscache',
@@ -36,7 +56,8 @@ def init_cache():
         arguments={
             'url': redis_url,
             'distributed_lock': True,
-        }
+        },
+        wrap=[LoggingProxy],
     )
     return cache
 
@@ -68,7 +89,7 @@ class RedisCache(Cache):
             keyword_vals = '|'
             for key, val in keywords.items():
                 keyword_vals += "%s %s " % ((str(key), str(val)))
-        return path + ':' + view_name + req_vals + keyword_vals
+        return 'ZCache:' + path + ':' + view_name + req_vals + keyword_vals
 
     def ZCache_invalidate(self, ob):
         '''
@@ -77,21 +98,26 @@ class RedisCache(Cache):
         path = ob.absolute_url_path()
         regex = "%s%s*" % (KEY_PREFIX, path)
         # need to get the client because scanning for regex
-        client = self.cache.backend.client
+        client = self.cache.actual_backend.client
         entries = client.scan_iter(match=regex)
         for entry in entries:
             # delete goes through key mangler, so get rid of prefix
             self.cache.delete(entry[len(KEY_PREFIX):])
+        logger.info("Invalidated all cache entries for {}".format(path))
 
     def ZCache_get(self, ob, view_name='', keywords=None,
                    mtime_func=None, default=None):
         '''
         Gets a cache entry or returns default.
         '''
+        result = "HIT"
+        path = ob.absolute_url_path()
         key = self.get_key(ob, view_name, keywords)
         value = self.cache.get(key)
         if value is NO_VALUE:
             value = default
+            result = 'MISS'
+        logger.info("Cache {} for {} (key={})".format(result, path, key))
         return value
 
     def ZCache_set(self, ob, data, view_name='', keywords=None,
@@ -99,8 +125,10 @@ class RedisCache(Cache):
         '''
         Sets a cache entry.
         '''
+        path = ob.absolute_url_path()
         key = self.get_key(ob, view_name, keywords)
         self.cache.set(key, data)
+        logger.info("Setting value for {} (key={})".format(path, key))
 
 
 class RedisCacheManager(CacheManager, SimpleItem):
