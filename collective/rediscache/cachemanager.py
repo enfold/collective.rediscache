@@ -30,12 +30,12 @@ class LoggingProxy(ProxyBackend):
             result = "HIT"
             if value is NO_VALUE:
                 result = "MISS"
-            logger.info("Cache {} for key {}".format(result, key))
+            logger.debug("Cache {} for key {}".format(result, key))
         return value
 
     def set(self, key, value):
         if 'ZCache:' not in key:
-            logger.info("Setting value for key {}".format(key))
+            logger.debug("Setting value for key {}".format(key))
         return self.proxied.set(key, value)
 
 redis_cache = make_region(
@@ -117,7 +117,7 @@ class RedisCache(Cache):
         if value is NO_VALUE:
             value = default
             result = 'MISS'
-        logger.info("Cache {} for {} (key={})".format(result, path, key))
+        logger.debug("Cache {} for {} (key={})".format(result, path, key))
         return value
 
     def ZCache_set(self, ob, data, view_name='', keywords=None,
@@ -128,7 +128,7 @@ class RedisCache(Cache):
         path = ob.absolute_url_path()
         key = self.get_key(ob, view_name, keywords)
         self.cache.set(key, data)
-        logger.info("Setting value for {} (key={})".format(path, key))
+        logger.debug("Setting value for {} (key={})".format(path, key))
 
 
 class RedisCacheManager(CacheManager, SimpleItem):

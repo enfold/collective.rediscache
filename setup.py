@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='collective.rediscache',
-      version='0.1.0',
+      version='0.2.0',
       url='http://pypi.python.org/pypi/collective.rediscache',
       license='ZPL 2.1',
       description="Redis cache manager for Zope 2.",
